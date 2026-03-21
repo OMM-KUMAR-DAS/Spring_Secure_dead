@@ -1,0 +1,46 @@
+package com.example.security.entity;
+
+
+import jakarta.persistence.Entity;
+
+import java.util.Collection;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import jakarta.persistence.*;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Entity
+@Table(name="users")
+public class UserEntity  {
+	
+	
+	
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer Id;
+	
+	@Column(name="username",nullable = false,unique = true)
+	String userName;
+	
+	@Column(name="password",nullable = false)
+	String password;
+	
+	@Column(name="role",nullable = false)
+	String role;
+	
+
+}
