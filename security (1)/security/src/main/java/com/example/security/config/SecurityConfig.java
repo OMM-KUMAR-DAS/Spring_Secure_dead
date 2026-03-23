@@ -3,8 +3,11 @@ package com.example.security.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -28,23 +31,36 @@ public class SecurityConfig {
 	{
 		try {
 			
-		        return http.authorizeHttpRequests(auth->
+		        return http
+		        		
+		        		.csrf(csrf -> csrf.disable())
+
+		               
+		                .sessionManagement(session -> 
+		                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+		                )
+		        		.authorizeHttpRequests(auth->
 		        
 		        		
-		        	auth
-		        	.requestMatchers("/signup/**").permitAll()
-		        	.requestMatchers("/admin/**").hasAnyRole("ADMIN")
-		        	.requestMatchers("/user/**").hasAnyRole("ADMIN","USER")
-		        	.anyRequest().authenticated()
-		        
-		        )        		
-		       .build();
+			        	auth
+			        	.requestMatchers("/signup/**","/login/**").permitAll()
+			        	.requestMatchers("/admin/**").hasAnyRole("ADMIN")
+			        	.requestMatchers("/user/**").hasAnyRole("ADMIN","USER")
+			        	.anyRequest().authenticated()
+			        
+			        )        		
+		            .build();
 			
 		}catch(Exception ex)
 		{
 			log.error("error occured:{}",ex.getMessage());
 			throw ex;
 		}
+	}
+	
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+	    return config.getAuthenticationManager();
 	}
 	
 //	@Bean

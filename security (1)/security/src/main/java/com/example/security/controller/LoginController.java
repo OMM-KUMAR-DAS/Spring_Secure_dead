@@ -4,14 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.security.records.request.LoginRequest;
-import com.example.security.records.request.SignupRequest;
-import com.example.security.records.response.GenericResponse;
 import com.example.security.service.LoginService;
-import com.example.security.service.SignupService;
 
-@Service
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+
+@RestController
+@Slf4j
 public class LoginController {
 	
 	
@@ -19,9 +22,10 @@ public class LoginController {
 	private LoginService loginService;
 	
 	@PostMapping("/login")
-	public GenericResponse login(@RequestBody LoginRequest request)
+	public Object login(@RequestBody LoginRequest request, HttpServletResponse response)
 	{
-		return loginService.login(request);
+		log.info("<<<START>>> LOGIN");
+	    return loginService.login(request, response);
 	}
 
 }
