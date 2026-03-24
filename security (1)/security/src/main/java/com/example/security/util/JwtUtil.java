@@ -49,7 +49,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    // ✅ Validate Token
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -57,8 +56,8 @@ public class JwtUtil {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            throw e;
+        } catch (Exception e) {
+            return false;
         }
     }
 

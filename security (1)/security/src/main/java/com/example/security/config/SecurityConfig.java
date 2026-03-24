@@ -14,6 +14,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.example.security.filter.JwtFilter;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,8 +25,11 @@ import lombok.extern.slf4j.Slf4j;
 public class SecurityConfig {
 	
 	
-	 @Autowired
-	private PasswordEncoder passEncoder;
+	    @Autowired
+	    private PasswordEncoder passEncoder;
+	 
+	    @Autowired
+	    private JwtFilter jwtFilter;
 	
 	
 	@Bean
@@ -48,7 +54,8 @@ public class SecurityConfig {
 			        	.requestMatchers("/user/**").hasAnyRole("ADMIN","USER")
 			        	.anyRequest().authenticated()
 			        
-			        )        		
+			        )   
+		            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 		            .build();
 			
 		}catch(Exception ex)
