@@ -7,7 +7,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.security.records.response.GenericResponse;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestControllerAdvice
+@Slf4j
 public class GlobalException {
 	
 	
@@ -22,15 +25,21 @@ public class GlobalException {
 	                .body(response);
 	        
 	    }
+	 
+	 
 
 	    
-	    @ExceptionHandler(Exception.class)
-	    public ResponseEntity<?> handleOtherExceptions(Exception ex) {
-	    	 GenericResponse response= new GenericResponse(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR.value());
-			 
-			 return ResponseEntity
-		                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-		                .body(response);
-	    }
+	 @ExceptionHandler(Exception.class)
+	 public ResponseEntity<?> handleOtherExceptions(Exception ex) {
+
+	     log.error("🚨 Unhandled exception occurred: {}", ex.getMessage(), ex);
+
+	     GenericResponse response =
+	             new GenericResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+	     return ResponseEntity
+	             .status(HttpStatus.INTERNAL_SERVER_ERROR)
+	             .body(response);
+	 }
 
 }

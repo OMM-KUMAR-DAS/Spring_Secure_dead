@@ -85,10 +85,10 @@ public class LoginService {
 
 	        // ✅ Create Cookie
 	        Cookie cookie = new Cookie("refreshToken", refreshToken);
-	        cookie.setHttpOnly(true);
+	        cookie.setHttpOnly(true);  //prevents xss attack
 	        cookie.setMaxAge(7 * 24 * 60 * 60);
 	        cookie.setSecure(false); // true in production
-	        cookie.setPath("/refreshToken");
+	        cookie.setPath("/api");
 	        cookie.setAttribute("SameSite", "Strict");
 
 	        response.addCookie(cookie);

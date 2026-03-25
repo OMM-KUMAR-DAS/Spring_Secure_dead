@@ -36,7 +36,7 @@ public class SecurityConfig {
 	public SecurityFilterChain securityConfigs(HttpSecurity http) throws Exception
 	{
 		try {
-			
+			log.info("hi filter");
 		        return http
 		        		
 		        		.csrf(csrf -> csrf.disable())
@@ -46,10 +46,8 @@ public class SecurityConfig {
 		                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 		                )
 		        		.authorizeHttpRequests(auth->
-		        
-		        		
 			        	auth
-			        	.requestMatchers("/signup/**","/login/**").permitAll()
+			        	.requestMatchers("/signup/**","/login/**","/refreshToken").permitAll()
 			        	.requestMatchers("/admin/**").hasAnyRole("ADMIN")
 			        	.requestMatchers("/user/**").hasAnyRole("ADMIN","USER")
 			        	.anyRequest().authenticated()

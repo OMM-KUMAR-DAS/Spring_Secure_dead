@@ -40,7 +40,7 @@ public class RefreshTokenEntity {
 	LocalDateTime validity;
 	
 	
-	
+	@Column(name="status",nullable = false)
 	String status;
 	
 
