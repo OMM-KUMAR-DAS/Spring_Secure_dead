@@ -27,8 +27,8 @@ public class RefreshTokenEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer Id;
 	
-	@Column(name="username",nullable = false)
-	String userName;
+	@Column(name="email",nullable = false)
+	String email;
 	
 	@Column(name="token",nullable = false,unique = true)
 	String token;

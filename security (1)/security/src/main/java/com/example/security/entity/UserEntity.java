@@ -33,14 +33,15 @@ public class UserEntity  {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer Id;
 	
-	@Column(name="username",nullable = false,unique = true)
-	String userName;
-	
-	@Column(name="password",nullable = false)
-	String password;
-	
-	@Column(name="role",nullable = false)
-	String role;
-	
+	 // Main user email
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    // Null for OAuth users
+    @Column
+    private String password;
+
+    @Column
+    private String role;
 
 }

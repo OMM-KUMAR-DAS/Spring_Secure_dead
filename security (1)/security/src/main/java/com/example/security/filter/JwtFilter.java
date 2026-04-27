@@ -57,28 +57,28 @@ public class JwtFilter extends OncePerRequestFilter  {
 	        if (jwtUtil.validateToken(token)) {
 	            log.info("✅ Token is valid");
 
-	            String userName = jwtUtil.extractUsername(token);
-	            log.info("👤 Username extracted: {}", userName);
+	            String email = jwtUtil.extractUsername(token);
+	            log.info("👤 Username extracted: {}", email);
 
 	            // 🔹 Step 4: Check if already authenticated
-	            if (userName != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+	            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
 	                log.info("🔍 No existing authentication found, proceeding...");
 
-	                UserEntity user = userRepo.findByUserName(userName).orElseThrow();
-	                log.info("📦 User fetched from DB: {}", user.getUserName());
+	                UserEntity user = userRepo.findByEmail(email).orElseThrow();
+	                log.info("📦 User fetched from DB: {}", user.getEmail());
 	                log.info("user role:{}",user.getRole());
 
 	                Authentication authenticatedUser =
 	                        new UsernamePasswordAuthenticationToken(
-	                                userName,
+	                        		email,
 	                                null,
 	                                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
 	                        );
 
 	                // 🔹 Step 5: Set authentication
 	                SecurityContextHolder.getContext().setAuthentication(authenticatedUser);
-	                log.info("🔐 Authentication set for user: {}", userName);
+	                log.info("🔐 Authentication set for user: {}", email);
 
 	            } else {
 	                log.info("ℹ User already authenticated, skipping...");

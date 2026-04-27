@@ -29,15 +29,15 @@ public class SignupService {
 	{
 		try {
 			
-			Optional<UserEntity> user=  userRepo.findByUserName(request.username());
+			Optional<UserEntity> user=  userRepo.findByEmail(request.email());
 			
 			if(!user.isEmpty())
 			{
 				return new GenericResponse("User Already exist",HttpStatus.OK.value());
 			}
 			
-			UserEntity registerUser= UserEntity.builder().
-					                  userName(request.username())
+			UserEntity registerUser= UserEntity.builder()
+					                  .email(request.email())
 					                 .password(passwordEncoder.encode(request.password()))
 					                 .role(request.role())
 					                 .build();

@@ -30,9 +30,9 @@ public class JwtUtil {
     }
 
     // ✅ Generate Access Token
-    public String generateAccessToken(String username) {
+    public String generateAccessToken(String email) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration.toMillis()))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -40,9 +40,9 @@ public class JwtUtil {
     }
 
     // ✅ Generate Refresh Token
-    public String generateRefreshToken(String username) {
+    public String generateRefreshToken(String email) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration.toMillis()))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)

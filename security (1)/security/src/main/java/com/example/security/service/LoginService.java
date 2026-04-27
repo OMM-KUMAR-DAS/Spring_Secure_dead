@@ -50,17 +50,17 @@ public class LoginService {
 	public Object login(LoginRequest request, HttpServletResponse response) {
 	    try {
 
-	        log.info("Login attempt for user: {}", request.username());
+	        log.info("Login attempt for user: {}", request.email());
 
 	        Authentication auth = authManager.authenticate(
 	                new UsernamePasswordAuthenticationToken(
-	                        request.username(),
+	                        request.email(),
 	                        request.password()
 	                )
 	        );
 
 	        if (!auth.isAuthenticated()) {
-	            log.info("Authentication failed for user: {}", request.username());
+	            log.info("Authentication failed for user: {}", request.email());
 	            return new GenericResponse("User Not Found", HttpStatus.NO_CONTENT.value());
 	        }
 
@@ -74,7 +74,7 @@ public class LoginService {
 
 	        RefreshTokenEntity refreshTokenentity = RefreshTokenEntity.builder()
 	                .createdAt(LocalDateTime.now())
-	                .userName(user.getUsername())
+	                .email(user.getUsername())
 	                .status("Y")
 	                .token(refreshToken)
 	                .validity(LocalDateTime.now().plusDays(7))
@@ -97,7 +97,7 @@ public class LoginService {
 	        return new LoginResponse(HttpStatus.OK.value(), accessToken);
 
 	    } catch (Exception ex) {
-	        log.error("Login failed for user: {} | Error: {}", request.username(), ex.getMessage());
+	        log.error("Login failed for user: {} | Error: {}", request.email(), ex.getMessage());
 	        throw ex;
 	    }
 	}

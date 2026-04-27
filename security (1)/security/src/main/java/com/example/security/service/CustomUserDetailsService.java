@@ -24,32 +24,32 @@ public class CustomUserDetailsService implements UserDetailsService {
 	private UserRepository userRepo;
 
 	@Override
-	public UserDetails loadUserByUsername(String username) {
+	public UserDetails loadUserByUsername(String email) {
 
 	    try {
-	        log.info("🔐 Attempting to load user by username: {}", username);
+	        log.info("🔐 Attempting to load user by email: {}", email);
 
-	        UserEntity user = userRepo.findByUserName(username)
+	        UserEntity user = userRepo.findByEmail(email)
 	                .orElseThrow(() -> {
-	                    log.error("❌ User not found in DB: {}", username);
+	                    log.error("❌ User not found in DB: {}", email);
 	                    return new UserNotFoundException("User not found");
 	                });
 
-	        log.info("✅ User found: {}", user.getUserName());
+	        log.info("✅ User found: {}", user.getEmail());
 	        log.info("🔑 User role: {}", user.getRole());
 
 	        UserDetails userDetails = User.builder()
-	                .username(user.getUserName())
+	                .username(user.getEmail())
 	                .password(user.getPassword())
 	                .roles(user.getRole())
 	                .build();
 
-	        log.info("📦 UserDetails object created successfully for: {}", username);
+	        log.info("📦 UserDetails object created successfully for: {}", email);
 
 	        return userDetails;
 
 	    } catch (Exception ex) {
-	        log.error("🚨 Error while loading user: {} | Reason: {}", username, ex.getMessage());
+	        log.error("🚨 Error while loading user: {} | Reason: {}", email, ex.getMessage());
 	        throw ex;
 	    }
 	}

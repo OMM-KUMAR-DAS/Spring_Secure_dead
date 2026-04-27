@@ -2,7 +2,7 @@ package com.example.security.records.request;
 
 public record SignupRequest(
 		
-		String username,
+		String email,
 		String password,
 		String role
 		

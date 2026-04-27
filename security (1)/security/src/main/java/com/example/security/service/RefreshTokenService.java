@@ -56,12 +56,12 @@ public class RefreshTokenService {
 	            return new GenericResponse("Token Invalidated Login Again", HttpStatus.NO_CONTENT.value());
 	        }
 
-	        log.info("📦 Token verified in DB for user: {}", user.getUserName());
+	        log.info("📦 Token verified in DB for user: {}", user.getEmail());
 
 	        // 🔹 Step 4: Generate new access token
-	        String accessToken = jwtUtil.generateAccessToken(user.getUserName());
+	        String accessToken = jwtUtil.generateAccessToken(user.getEmail());
 
-	        log.info("🎟 New access token generated for user: {}", user.getUserName());
+	        log.info("🎟 New access token generated for user: {}", user.getEmail());
 
 	        // 🔹 Step 5: Prepare response
 	        Map<String, Object> response = new HashMap<>();

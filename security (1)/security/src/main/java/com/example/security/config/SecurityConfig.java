@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.example.security.filter.JwtFilter;
+import com.example.security.service.Oauth2SuccessHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,13 +31,16 @@ public class SecurityConfig {
 	 
 	    @Autowired
 	    private JwtFilter jwtFilter;
+	    
+	    @Autowired
+	    private Oauth2SuccessHandler oauth2SuccessHandler;
 	
 	
 	@Bean
 	public SecurityFilterChain securityConfigs(HttpSecurity http) throws Exception
 	{
 		try {
-			log.info("hi filter");
+			
 		        return http
 		        		
 		        		.csrf(csrf -> csrf.disable())
@@ -54,6 +58,10 @@ public class SecurityConfig {
 			        
 			        )   
 		            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+		            .oauth2Login(oauth->{
+		            	
+		            	oauth.successHandler(oauth2SuccessHandler);
+		            })
 		            .build();
 			
 		}catch(Exception ex)
