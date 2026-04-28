@@ -30,7 +30,7 @@ public class AuthIdentityEntity {
     @Column(name="provider_id",nullable = false)
     private String providerUserId;
 
-    @Column(name="provider_specific_email",nullable=false)
+    @Column(name="provider_specific_email")
     private String providerEmail;
     
     @ManyToOne

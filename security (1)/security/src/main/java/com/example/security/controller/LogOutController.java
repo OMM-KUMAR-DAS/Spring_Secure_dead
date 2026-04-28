@@ -17,7 +17,7 @@ public class LogOutController {
 	@Autowired
 	LogOutService logoutService;
 	
-	@PostMapping("/logouts")
+	@PostMapping("/system/logout")
 	public Object logouts(@CookieValue(name="refreshToken",required=true) String token, HttpServletResponse response)
 	{
 		log.info("<<<START>>> LOGOUT");

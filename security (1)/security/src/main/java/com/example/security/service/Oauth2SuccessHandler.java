@@ -46,170 +46,152 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication)
             throws IOException, ServletException {
 
-        try {
+        OAuth2AuthenticationToken token =
+                (OAuth2AuthenticationToken) authentication;
 
-            OAuth2AuthenticationToken token =
-                    (OAuth2AuthenticationToken) authentication;
+        OAuth2User oauthUser = token.getPrincipal();
 
-            OAuth2User oauthUser = token.getPrincipal();
+        String provider = token.getAuthorizedClientRegistrationId();
 
-            String provider = token.getAuthorizedClientRegistrationId();
-            String providerUserId = oauthUser.getAttribute("sub");
-            String email = oauthUser.getAttribute("email");
+        // -----------------------------
+        // STEP 1: Normalize provider data
+        // -----------------------------
+        String providerUserId = null;
+        String email = null;
 
-            log.info("OAuth Login => provider:{} providerId:{} email:{}",
-                    provider, providerUserId, email);
+        if ("google".equals(provider)) {
+            providerUserId = oauthUser.getAttribute("sub").toString();
+            Object rawEmail = oauthUser.getAttribute("email");
+            email = rawEmail != null ? rawEmail.toString() : null;
+        }
+        if ("github".equals(provider)) {
+            Object rawId = oauthUser.getAttribute("id");
+            providerUserId = rawId.toString();
 
-            UserEntity user;
+            Object rawEmail = oauthUser.getAttribute("email");
+            email = rawEmail != null ? rawEmail.toString() : null;
+        }
 
-            /*
-             ------------------------------------------------
-             STEP 1 : CHECK EXISTING PROVIDER LINK
-             ------------------------------------------------
-            */
-            Optional<AuthIdentityEntity> existingIdentity =
-                    authIdentityRepo.findByProviderUserIdAndProvider(
-                            providerUserId,
-                            provider
-                    );
 
-            if (existingIdentity.isPresent()) {
+        log.info("OAuth Login => provider:{} providerId:{} email:{}",
+                provider, providerUserId, email);
 
-                AuthIdentityEntity identity = existingIdentity.get();
-                identity.setLastLogin(LocalDateTime.now());
+        UserEntity user;
 
-                authIdentityRepo.save(identity);
+        // -----------------------------
+        // STEP 2: Check identity first (MOST IMPORTANT)
+        // -----------------------------
+        Optional<AuthIdentityEntity> existingIdentity =
+                authIdentityRepo.findByProviderUserIdAndProvider(
+                        provider, providerUserId);
 
-                user = identity.getUser();
+        if (existingIdentity.isPresent()) {
 
-                log.info("Existing provider user login success");
+            AuthIdentityEntity identity = existingIdentity.get();
+            identity.setLastLogin(LocalDateTime.now());
+            authIdentityRepo.save(identity);
 
-            } else {
+            user = identity.getUser();
 
-                /*
-                 --------------------------------------------
-                 STEP 2 : CHECK USER BY EMAIL
-                 --------------------------------------------
-                */
-                Optional<UserEntity> existingUser =
-                        userRepo.findByEmail(email);
+            log.info("Existing provider login success");
+        } 
+        else {
 
-                if (existingUser.isPresent()) {
+            // -----------------------------
+            // STEP 3: Email-based linking (SAFE)
+            // -----------------------------
+            Optional<UserEntity> existingUser = Optional.empty();
 
-                    user = existingUser.get();
-
-                    log.info("Existing email found. Linking provider.");
-
-                } else {
-
-                    /*
-                     ----------------------------------------
-                     STEP 3 : CREATE NEW USER
-                     ----------------------------------------
-                    */
-                    user = UserEntity.builder()
-                            .email(email)
-                            .password(null)
-                            .role("USER")
-                            .build();
-
-                    user = userRepo.save(user);
-
-                    log.info("New user created");
-                }
-
-                /*
-                 --------------------------------------------
-                 STEP 4 : CREATE AUTH IDENTITY
-                 --------------------------------------------
-                */
-                AuthIdentityEntity newIdentity =
-                        AuthIdentityEntity.builder()
-                                .provider(provider)
-                                .providerUserId(providerUserId)
-                                .providerEmail(email)
-                                .user(user)
-                                .createdAt(LocalDateTime.now())
-                                .lastLogin(LocalDateTime.now())
-                                .build();
-
-                authIdentityRepo.save(newIdentity);
-
-                log.info("Provider linked successfully");
+            if (email != null) {
+                existingUser = userRepo.findByEmail(email);
             }
 
-            /*
-             ------------------------------------------------
-             STEP 5 : GENERATE TOKENS
-             ------------------------------------------------
-            */
-            String accessToken = generateRefreshAndAccessTokens(response, user);
+            if (existingUser.isPresent()) {
 
-            /*
-             ------------------------------------------------
-             STEP 6 : SEND RESPONSE
-             ------------------------------------------------
-            */
-            LoginResponse loginResponse =
-                    new LoginResponse(HttpStatus.OK.value(), accessToken);
+                user = existingUser.get();
 
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("application/json");
+                log.info("User found by email. Linking provider.");
+            } 
+            else {
 
-            new ObjectMapper().writeValue(response.getWriter(), loginResponse);
+                // -----------------------------
+                // STEP 4: Create new user
+                // -----------------------------
+                user = UserEntity.builder()
+                        .email(email)   // can be null for GitHub
+                        .password(null)
+                        .role("USER")
+                        .build();
 
-        } catch (Exception ex) {
+                user = userRepo.save(user);
 
-            log.error("onAuthenticationSuccess failed due to: {}", ex.getMessage());
-            throw ex;
+                log.info("New user created");
+            }
+
+            // -----------------------------
+            // STEP 5: Create identity link
+            // -----------------------------
+            AuthIdentityEntity identity = AuthIdentityEntity.builder()
+                    .provider(provider)
+                    .providerUserId(providerUserId)
+                    .providerEmail(email)
+                    .user(user)
+                    .createdAt(LocalDateTime.now())
+                    .lastLogin(LocalDateTime.now())
+                    .build();
+
+            authIdentityRepo.save(identity);
+
+            log.info("Identity linked successfully");
         }
+
+        // -----------------------------
+        // STEP 6: Generate tokens
+        // -----------------------------
+        String accessToken = generateTokens(response, user);
+
+        LoginResponse loginResponse =
+                new LoginResponse(HttpStatus.OK.value(), accessToken);
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+
+        new ObjectMapper().writeValue(response.getWriter(), loginResponse);
     }
 
-    /*
-     --------------------------------------------------------
-     COMMON TOKEN METHOD
-     --------------------------------------------------------
-    */
-    public String generateRefreshAndAccessTokens(HttpServletResponse response,
-                                                 UserEntity user) {
+    // -----------------------------
+    // TOKEN GENERATION
+    // -----------------------------
+    public String generateTokens(HttpServletResponse response,
+                                 UserEntity user) {
 
-        try {
+        String accessToken =
+                jwtUtil.generateAccessToken(user.getEmail()!=null?user.getEmail():user.getId().toString());
 
-            String accessToken =
-                    jwtUtil.generateAccessToken(user.getEmail());
+        String refreshToken =
+                jwtUtil.generateRefreshToken(user.getEmail()!=null?user.getEmail():user.getId().toString());
 
-            String refreshToken =
-                    jwtUtil.generateRefreshToken(user.getEmail());
+        RefreshTokenEntity refreshEntity =
+                RefreshTokenEntity.builder()
+                        .token(refreshToken)
+                        .email((user.getEmail()!=null?user.getEmail():null))
+                        .status("Y")
+                        .createdAt(LocalDateTime.now())
+                        .validity(LocalDateTime.now().plusDays(7))
+                        .build();
 
-            log.info("Tokens generated for user: {}", user.getEmail());
+        refreshTokenRepo.save(refreshEntity);
 
-            RefreshTokenEntity refreshEntity =
-                    RefreshTokenEntity.builder()
-                            .createdAt(LocalDateTime.now())
-                            .email(user.getEmail())
-                            .status("Y")
-                            .token(refreshToken)
-                            .validity(LocalDateTime.now().plusDays(7))
-                            .build();
+        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(7 * 24 * 60 * 60);
+        cookie.setSecure(false); // change to true in prod (HTTPS)
+        cookie.setPath("/api");
+        cookie.setAttribute("SameSite", "Strict");
 
-            refreshTokenRepo.save(refreshEntity);
+        response.addCookie(cookie);
 
-            Cookie cookie = new Cookie("refreshToken", refreshToken);
-            cookie.setHttpOnly(true);
-            cookie.setMaxAge(7 * 24 * 60 * 60);
-            cookie.setSecure(false); 
-            cookie.setPath("/api");
-            cookie.setAttribute("SameSite", "Strict");
-
-            response.addCookie(cookie);
-
-            log.info("Refresh token cookie added");
-
-            return accessToken;
-
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        return accessToken;
     }
 }
 //OAuth2AuthenticationToken token =

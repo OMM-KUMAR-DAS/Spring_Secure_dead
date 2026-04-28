@@ -17,8 +17,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.example.security.filter.JwtFilter;
+import com.example.security.records.response.GenericResponse;
 import com.example.security.service.Oauth2SuccessHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
@@ -61,6 +64,22 @@ public class SecurityConfig {
 		            .oauth2Login(oauth->{
 		            	
 		            	oauth.successHandler(oauth2SuccessHandler);
+		            	
+		            	oauth.failureHandler((request, response, exception) -> {
+
+		                    log.error("OAuth Login Failed: {}", exception.getMessage());
+
+		                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		                    response.setContentType("application/json");
+
+		                    GenericResponse errorResponse =
+		                            new GenericResponse(
+		                                    "OAuth login failed",
+		                                    HttpServletResponse.SC_UNAUTHORIZED
+		                            );
+
+		                    new ObjectMapper().writeValue(response.getWriter(), errorResponse);
+		                });
 		            })
 		            .build();
 			
