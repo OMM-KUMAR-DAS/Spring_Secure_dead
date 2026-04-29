@@ -83,7 +83,7 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
         // -----------------------------
         Optional<AuthIdentityEntity> existingIdentity =
                 authIdentityRepo.findByProviderUserIdAndProvider(
-                        provider, providerUserId);
+                        providerUserId,provider);
 
         if (existingIdentity.isPresent()) {
 
@@ -185,7 +185,7 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
         cookie.setMaxAge(7 * 24 * 60 * 60);
-        cookie.setSecure(false); // change to true in prod (HTTPS)
+        cookie.setSecure(false); 
         cookie.setPath("/api");
         cookie.setAttribute("SameSite", "Strict");
 

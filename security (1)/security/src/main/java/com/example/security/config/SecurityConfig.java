@@ -69,7 +69,7 @@ public class SecurityConfig {
 
 		                    log.error("OAuth Login Failed: {}", exception.getMessage());
 
-		                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		                    response.setStatus(HttpServletResponse.SC_OK);
 		                    response.setContentType("application/json");
 
 		                    GenericResponse errorResponse =

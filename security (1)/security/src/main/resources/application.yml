@@ -18,3 +18,4 @@ spring:
             scope:
               - read:user
               - user:email
+			 
