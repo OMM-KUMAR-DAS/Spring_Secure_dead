@@ -1,15 +1,26 @@
 package com.example.security.service;
 
 import java.io.IOException;
+import org.springframework.http.HttpHeaders;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.example.security.entity.AuthIdentityEntity;
 import com.example.security.entity.RefreshTokenEntity;
@@ -30,7 +41,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
 
@@ -38,6 +49,10 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
     private final UserRepository userRepo;
     private final RefreshTokenRepository refreshTokenRepo;
     private final JwtUtil jwtUtil;
+    private final OAuth2AuthorizedClientService authorizedClientService;
+    
+    @Value("${GITHUB_API}")
+    private String githubUrl;
 
     @Override
     @Transactional
@@ -70,6 +85,19 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
 
             Object rawEmail = oauthUser.getAttribute("email");
             email = rawEmail != null ? rawEmail.toString() : null;
+            
+           //fetch email if null
+            if (email == null) {
+
+                var authorizedClient = authorizedClientService.loadAuthorizedClient(
+                        token.getAuthorizedClientRegistrationId(),
+                        token.getName()
+                );
+
+                String accessToken = authorizedClient.getAccessToken().getTokenValue();
+
+                email = fetchGithubEmail(accessToken);
+            }
         }
 
 
@@ -193,7 +221,40 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
 
         return accessToken;
     }
+    
+    //method to fetch github email of the the authenticated user
+    private String fetchGithubEmail(String accessToken) {
+
+        RestTemplate restTemplate = new RestTemplate();
+       
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        HttpEntity<?> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<List<Map<String, Object>>> response =
+                restTemplate.exchange(
+                		githubUrl,
+                        HttpMethod.GET,
+                        entity,
+                        new ParameterizedTypeReference<>() {}
+                );
+
+        List<Map<String, Object>> emails = response.getBody();
+
+        if (emails == null || emails.isEmpty()) return null;
+
+        return emails.stream()
+                .filter(e -> Boolean.TRUE.equals(e.get("primary")))
+                .filter(e -> Boolean.TRUE.equals(e.get("verified")))
+                .map(e -> (String) e.get("email"))
+                .findFirst()
+                .orElse(null);
+    }
 }
+
+
 //OAuth2AuthenticationToken token =
 //(OAuth2AuthenticationToken) authentication;
 //
